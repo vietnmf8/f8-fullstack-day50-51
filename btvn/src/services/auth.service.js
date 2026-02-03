@@ -88,6 +88,11 @@ class AuthService {
         const tokens = await this.responseWithTokens(user);
         return tokens;
     }
+
+    /* Revoke Token */
+    async addRevokedToken(accessToken, tokenPayload) {
+        await userModel.addRevokeToken(accessToken, tokenPayload.exp);
+    }
 }
 
 module.exports = new AuthService();

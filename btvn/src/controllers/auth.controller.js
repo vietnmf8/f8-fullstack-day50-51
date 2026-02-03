@@ -1,5 +1,7 @@
 const { httpCodes } = require("@/config/constants");
+const userModel = require("@/models/user.model");
 const authService = require("@/services/auth.service");
+const getClientToken = require("@/utils/getClientToken");
 
 /* Đăng ký */
 const register = async (req, res) => {
@@ -27,4 +29,11 @@ const refreshToken = async (req, res) => {
     res.success(tokens);
 };
 
-module.exports = { register, login, getCurrentUser, refreshToken };
+/* Đăng xuất */
+const logout = async (req, res) => {
+    const { accessToken, tokenPayload } = req;
+    await authService.addRevokedToken(accessToken, tokenPayload);
+    res.success(null, 204);
+};
+
+module.exports = { register, login, getCurrentUser, refreshToken, logout };
