@@ -32,8 +32,11 @@ const authRequiredMiddleware = async (req, res, next) => {
 
     const payload = JSON.parse(base64.decode(encodedPayload, true));
 
-    // Kiểm tra exp
-    if (payload.exp < Date.now() / 1000) {
+    // Check blacklist
+    const count = await userModel.countTokenInBlacklist(accessToken);
+
+    if (count > 0 || payload.exp < Date.now() / 1000) {
+        // Kiểm tra exp
         return res.error("Unauthorized", 401);
     }
 
@@ -47,6 +50,8 @@ const authRequiredMiddleware = async (req, res, next) => {
 
     // Gán vào req để cho res trả về cho client
     req.user = currentUser;
+    req.accessToken = accessToken;
+    req.tokenPayload = payload;
 
     next();
 };

@@ -33,7 +33,7 @@ const responseWithTokens = async (user) => {
     // Ký token mới
     const payload = {
         sub: user.id,
-        exp: Date.now() / 1000 + 60,
+        exp: parseInt(Date.now() / 1000 + 60 * 60),
     };
     const accessToken = jwt.sign(payload, secret);
     const refreshToken = strings.generateRandomString(32);
@@ -110,4 +110,11 @@ const refreshToken = async (req, res) => {
     res.success(tokens);
 };
 
-module.exports = { register, login, getCurrentUser, refreshToken };
+/* Đăng xuất */
+const logout = async (req, res) => {
+    const { accessToken, tokenPayload } = req;
+    await userModel.createRevokeToken(accessToken, tokenPayload.exp);
+    res.success(null, 204);
+};
+
+module.exports = { register, login, getCurrentUser, refreshToken, logout };

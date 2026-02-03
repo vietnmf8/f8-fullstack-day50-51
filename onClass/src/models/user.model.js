@@ -47,6 +47,21 @@ class User {
         const [rows] = await pool.query(query, [token]);
         return rows[0];
     }
+
+    async createRevokeToken(token, expiresIn) {
+        const query = `INSERT INTO revoked_tokens (token, expires_at) VALUE (?, ?)`;
+        const [{ insertId }] = await pool.query(query, [
+            token,
+            new Date(expiresIn * 1000),
+        ]);
+        return insertId;
+    }
+
+    async countTokenInBlacklist(token) {
+        const query = `SELECT count(*) AS count FROM revoked_tokens WHERE token = ?`;
+        const [[{ count }]] = await pool.query(query, [token]);
+        return count;
+    }
 }
 
 module.exports = new User();
