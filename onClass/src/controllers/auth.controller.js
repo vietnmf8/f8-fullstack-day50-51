@@ -33,7 +33,7 @@ const responseWithTokens = async (user) => {
     // Ký token mới
     const payload = {
         sub: user.id,
-        exp: Date.now() / 1000 + 10 * 1000,
+        exp: Date.now() / 1000 + 60,
     };
     const accessToken = jwt.sign(payload, secret);
     const refreshToken = strings.generateRandomString(32);

@@ -1,6 +1,8 @@
 const crypto = require("crypto");
 const { secret } = require("@/config/jwt");
 const userModel = require("@/models/user.model");
+const base64 = require("@/utils/base64");
+const JsonWebTokenError = require("@/classes/errors/JsonWebTokenError");
 
 const authRequiredMiddleware = async (req, res, next) => {
     // Lấy accessToken từ Header Request
@@ -24,13 +26,14 @@ const authRequiredMiddleware = async (req, res, next) => {
     const signature = hmac.digest("base64url");
 
     if (clientSignature !== signature) {
-        return res.error("Unauthorized", 401);
+        // return res.error("Unauthorized", 401);
+        throw new JsonWebTokenError("Invalid Token!!!!");
     }
 
-    const payload = JSON.parse(atob(encodedPayload));
+    const payload = JSON.parse(base64.decode(encodedPayload, true));
 
     // Kiểm tra exp
-    if (payload.exp < Date.now()) {
+    if (payload.exp < Date.now() / 1000) {
         return res.error("Unauthorized", 401);
     }
 
