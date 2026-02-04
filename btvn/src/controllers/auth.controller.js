@@ -1,7 +1,5 @@
 const { httpCodes } = require("@/config/constants");
-const userModel = require("@/models/user.model");
 const authService = require("@/services/auth.service");
-const getClientToken = require("@/utils/getClientToken");
 
 /* Đăng ký */
 const register = async (req, res) => {
