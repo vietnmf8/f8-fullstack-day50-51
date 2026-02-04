@@ -9,6 +9,8 @@ const authRequired = async (req, res, next) => {
     if (!accessToken) {
         return res.error("Unauthorized", httpCodes.unauthorized);
     }
+
+    // Verify Token
     const payload = await authService.verifyAccessToken(accessToken);
 
     // Kiểm tra Blacklist
