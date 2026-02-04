@@ -4,6 +4,7 @@ const authService = require("@/services/auth.service");
 const getClientToken = require("@/utils/getClientToken");
 
 const authRequired = async (req, res, next) => {
+    // Kiểm tra accessToken
     const accessToken = getClientToken(req.headers);
     if (!accessToken) {
         return res.error("Unauthorized", httpCodes.unauthorized);
