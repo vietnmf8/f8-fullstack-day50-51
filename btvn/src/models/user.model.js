@@ -36,42 +36,11 @@ class User {
         return insertId;
     }
 
-    /* Cập nhật field refresh_token */
-    async updateRefreshToken(id, token, ttl) {
-        const query = `UPDATE users SET refresh_token = ?, refresh_expires_at = ? WHERE id = ?`;
-        const [{ affectedRows }] = await pool.query(query, [token, ttl, id]);
-        return affectedRows;
-    }
-
-    /* Tìm bản ghi có refresh_token và thời gian còn hạn */
-    async findByRefreshToken(token) {
-        const query = `SELECT * FROM users WHERE refresh_token = ? AND refresh_expires_at >= now();`;
-        const [rows] = await pool.query(query, [token]);
-        return rows[0];
-    }
-
     /* Tìm kiếm user theo email để thêm vào conversation */
     async searchByEmail(queryStr) {
         const query = `SELECT id, email FROM users WHERE email LIKE ? LIMIT 10`;
         const [rows] = await pool.query(query, [`%${queryStr}%`]);
         return rows;
-    }
-
-    /* Thêm Access Token vào Blacklist */
-    async addRevokeToken(token, expiresIn) {
-        const query = `INSERT INTO revoked_tokens (token, expires_at) VALUE (?, ?)`;
-        const [{ insertId }] = await pool.query(query, [
-            token,
-            new Date(expiresIn * 1000),
-        ]);
-        return insertId;
-    }
-
-    /* Đếm bản ghi có token trong Blacklist */
-    async countRevokedToken(token) {
-        const query = `SELECT count(*) as count FROM revoked_tokens WHERE token = ?`;
-        const [[{ count }]] = await pool.query(query, [token]);
-        return count;
     }
 }
 

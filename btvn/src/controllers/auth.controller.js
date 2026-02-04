@@ -4,14 +4,24 @@ const authService = require("@/services/auth.service");
 /* Đăng ký */
 const register = async (req, res) => {
     const { email, password } = req.body;
-    const { newUser, tokens } = await authService.register(email, password);
+    const userAgent = req.headers["user-agent"];
+    const { newUser, tokens } = await authService.register(
+        email,
+        password,
+        userAgent,
+    );
     res.success(newUser, httpCodes.created, tokens);
 };
 
 /* Đăng nhập */
 const login = async (req, res) => {
     const { email, password } = req.body;
-    const { user, tokens } = await authService.login(email, password);
+    const userAgent = req.headers["user-agent"];
+    const { user, tokens } = await authService.login(
+        email,
+        password,
+        userAgent,
+    );
     res.success(user, httpCodes.success, tokens);
 };
 
@@ -23,7 +33,8 @@ const getCurrentUser = async (req, res) => {
 /* Lấy ra refresh_token từ phía Client */
 const refreshToken = async (req, res) => {
     const refreshToken = req.body.refresh_token;
-    const tokens = await authService.refresh(refreshToken);
+    const userAgent = req.headers["user-agent"];
+    const tokens = await authService.refresh(refreshToken, userAgent);
     res.success(tokens);
 };
 

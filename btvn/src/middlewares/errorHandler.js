@@ -1,7 +1,8 @@
 const { errorCodes, httpCodes } = require("@/config/constants");
+const AuthError = require("@/utils/AuthError");
 const isProduction = require("@/utils/isProduction");
 const { JsonWebTokenError } = require("jsonwebtoken");
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, _, res, next) => {
     if (res.headerSent) return next(err);
 
     let status;
@@ -17,6 +18,12 @@ const errorHandler = (err, req, res, next) => {
             err = "Unauthorized";
             status = httpCodes.unauthorized;
         }
+    }
+
+    // Hứng lỗi xác thực chung
+    if (err instanceof AuthError) {
+        err = err.message || "Unauthorized";
+        status = httpCodes.unauthorized;
     }
 
     // Conflict

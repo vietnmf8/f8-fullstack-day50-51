@@ -1,8 +1,11 @@
 const authConfig = require("@/config/auth.config");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const strings = require("@/utils/strings");
 const userModel = require("@/models/user.model");
+const randomString = require("@/utils/randomString");
+const AuthError = require("@/utils/AuthError");
+const refreshTokenModel = require("@/models/refreshToken.model");
+const revokedTokenModel = require("@/models/revokedToken.model");
 
 class AuthService {
     /* Ký Token */
@@ -15,6 +18,32 @@ class AuthService {
         });
 
         return accessToken;
+    }
+
+    /* Tạo Refresh Token */
+    async createRefreshToken(user, userAgent) {
+        // Check trùng Refresh Token trong DB
+        let refreshToken,
+            isExists = false;
+        do {
+            refreshToken = randomString();
+            const count =
+                await refreshTokenModel.countRefreshToken(refreshToken);
+            isExists = count > 0;
+        } while (isExists);
+
+        // Thời gian sống của Refresh Token
+        const expiresDate = new Date();
+        expiresDate.setDate(expiresDate.getDate() + authConfig.refreshTokenTTL);
+
+        // Thêm vào DB
+        await refreshTokenModel.addRefreshToken(
+            user.id,
+            refreshToken,
+            userAgent,
+            expiresDate,
+        );
+        return refreshToken;
     }
 
     /* Verify */
@@ -34,64 +63,72 @@ class AuthService {
     }
 
     /* Ký token mới (Access & Refresh Token) */
-    async responseWithTokens(user) {
+    async responseWithTokens(user, userAgent) {
         const accessToken = await this.signAccessToken(user);
-        const refreshToken = strings.generateRandomString(32);
+        /*  Cách cũ: 
+        const refreshToken = strings.generateRandomString(32); 
         const refreshTtl = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        await userModel.updateRefreshToken(user.id, refreshToken, refreshTtl);
+        await userModel.updateRefreshToken(user.id, refreshToken, refreshTtl); */
+
+        // Cách dùng built-in
+        const refreshToken = await this.createRefreshToken(user, userAgent);
 
         const tokens = {
             access_token: accessToken,
             access_token_ttl: authConfig.accessTokenTTL,
             refresh_token: refreshToken,
-            refresh_token_ttl: 60 * 60 * 24 * 30,
+            refresh_token_ttl: authConfig.refreshTokenTTL,
         };
 
         return tokens;
     }
 
     /* Đăng ký */
-    async register(email, password) {
+    async register(email, password, userAgent) {
         const hash = await this.hashPassword(password);
         const insertId = await userModel.create(email, hash);
         const newUser = {
             id: insertId,
             email,
         };
-        const tokens = await this.responseWithTokens(newUser);
+        const tokens = await this.responseWithTokens(newUser, userAgent);
         return { newUser, tokens };
     }
 
     /* Đăng nhập */
-    async login(email, password) {
+    async login(email, password, userAgent) {
         const user = await userModel.findByEmail(email);
 
         if (!user) {
-            return res.error("Unauthorized", httpCodes.unauthorized);
+            throw new AuthError();
         }
         const isValid = await this.comparePassword(password, user.password);
         if (!isValid) {
-            return res.error("Unauthorized", httpCodes.unauthorized);
+            throw new AuthError();
         }
-        const tokens = await this.responseWithTokens(user);
+        const tokens = await this.responseWithTokens(user, userAgent);
         return { user, tokens };
     }
 
     /* Refresh */
-    async refresh(refreshToken) {
-        const user = await userModel.findByRefreshToken(refreshToken);
-
-        if (!user) {
-            return res.error("Unauthorized", httpCodes.unauthorized);
+    async refresh(refreshToken, userAgent) {
+        const refreshTokenDB =
+            await refreshTokenModel.findByRefreshToken(refreshToken);
+        if (!refreshTokenDB) {
+            throw new AuthError();
         }
 
-        const tokens = await this.responseWithTokens(user);
+        const user = {
+            id: refreshTokenDB.user_id,
+        };
+        const tokens = await this.responseWithTokens(user, userAgent);
+        await refreshTokenModel.updateRefreshToken(refreshTokenDB.id);
         return tokens;
     }
 
     /* Revoke Token */
     async addRevokedToken(accessToken, tokenPayload) {
-        await userModel.addRevokeToken(accessToken, tokenPayload.exp);
+        await revokedTokenModel.addRevokeToken(accessToken, tokenPayload.exp);
     }
 }
 
