@@ -37,10 +37,10 @@ const create = (req, res) => {};
 
 /* Tìm kiếm user theo email */
 const search = async (req, res) => {
-    const { q } = req.query; // ?q=...
+    const { q } = req.query;
     if (!q) return res.success([]);
 
-    const users = await userModel.searchByEmail(q);
+    const users = await userModel.searchByEmail(q, req.user.id);
     res.success(users);
 };
 

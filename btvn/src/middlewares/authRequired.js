@@ -2,6 +2,7 @@ const userModel = require("@/models/user.model");
 const { httpCodes } = require("@/config/constants");
 const authService = require("@/services/auth.service");
 const getClientToken = require("@/utils/getClientToken");
+const revokedTokenModel = require("@/models/revokedToken.model");
 
 const authRequired = async (req, res, next) => {
     // Kiểm tra accessToken
@@ -14,7 +15,8 @@ const authRequired = async (req, res, next) => {
     const payload = await authService.verifyAccessToken(accessToken);
 
     // Kiểm tra Blacklist
-    const countRevokedToken = await userModel.countRevokedToken(accessToken);
+    const countRevokedToken =
+        await revokedTokenModel.countRevokedToken(accessToken);
     if (countRevokedToken > 0)
         return res.error("Unauthorized", httpCodes.unauthorized);
 

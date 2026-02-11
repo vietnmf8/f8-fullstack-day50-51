@@ -37,9 +37,16 @@ class User {
     }
 
     /* Tìm kiếm user theo email để thêm vào conversation */
-    async searchByEmail(queryStr) {
-        const query = `SELECT id, email FROM users WHERE email LIKE ? LIMIT 10`;
-        const [rows] = await pool.query(query, [`%${queryStr}%`]);
+    async searchByEmail(queryStr, currentUserId) {
+        const query = `
+        SELECT id, email FROM users
+        WHERE email LIKE ? AND id != ?
+        LIMIT 10
+    `;
+        const [rows] = await pool.query(query, [
+            `%${queryStr}%`,
+            currentUserId,
+        ]);
         return rows;
     }
 }

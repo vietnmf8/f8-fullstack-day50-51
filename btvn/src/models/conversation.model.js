@@ -45,6 +45,13 @@ class ConversationModel {
         const [rows] = await pool.query(query, [conversationId, userId]);
         return rows.length > 0;
     }
+
+    /* Lấy 1 cuộc hội thoại theo ID */
+    async findById(conversationId) {
+        const query = `SELECT * FROM conversations WHERE id = ? LIMIT 1`;
+        const [rows] = await pool.query(query, [conversationId]);
+        return rows[0] || null;
+    }
 }
 
 module.exports = new ConversationModel();

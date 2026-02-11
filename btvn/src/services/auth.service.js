@@ -3,9 +3,9 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const userModel = require("@/models/user.model");
 const randomString = require("@/utils/randomString");
-const AuthError = require("@/utils/AuthError");
 const refreshTokenModel = require("@/models/refreshToken.model");
 const revokedTokenModel = require("@/models/revokedToken.model");
+const { EmailExistError, AuthError, ValidateError } = require("@/utils/errors");
 
 class AuthService {
     /* Ký Token */
@@ -85,6 +85,27 @@ class AuthService {
 
     /* Đăng ký */
     async register(email, password, userAgent) {
+        // Kiểm tra email đã tồn tại
+        const existingUser = await userModel.findByEmail(email);
+        if (existingUser) {
+            throw new EmailExistError("Email already exists!!");
+        }
+
+        // Validate
+        const validateEmail = (email) => {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        };
+
+        const validatePassword = (password) => {
+            return password && password.length >= 6;
+        };
+
+        if (!validateEmail(email) || !validatePassword(password)) {
+            throw new ValidateError("Invalid email or password");
+        }
+
+        // Hash
         const hash = await this.hashPassword(password);
         const insertId = await userModel.create(email, hash);
         const newUser = {
